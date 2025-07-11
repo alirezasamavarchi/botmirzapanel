@@ -414,6 +414,52 @@ if(preg_match('/^select_new_location_(\d+)_(.+)$/', $data, $m)) {
     sendmessage($from_id, $result, null, 'HTML');
 }
 
+function getActiveLocations() {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT name_panel FROM marzban_panel WHERE status = 'activepanel'");
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+function changeServiceLocation($service_id, $new_location) {
+    $service = select("invoice", "*", "id_invoice", $service_id, "select");
+    if(!$service) return "❌ سرویس پیدا نشد!";
+    $username = $service['username'];
+    $old_location = $service['Service_location'];
+    $id_user = $service['id_user'];
+
+    $new_panel = select("marzban_panel", "*", "name_panel", $new_location, "select");
+    if(!$new_panel) return "❌ سرور جدید پیدا نشد!";
+
+    if($new_panel['type'] == 's-ui'){
+        $user_info = GetClientsS_UI($username, $old_location);
+        if(!$user_info) return "❌ سرویس فعلی در سرور قبلی پیدا نشد!";
+        $expire = $user_info['expiry'];
+        $volume = $user_info['volume'] - ($user_info['up'] + $user_info['down']);
+        $inboundid = $new_panel['inboundid'];
+        removeClientS_ui($old_location, $username);
+        $result = addClientS_ui($new_location, $username, $expire, $volume, $inboundid);
+        $sub_link = $result['obj']['clients'][0]['subscription_url'] ?? null;
+    } else {
+        $user_info = getuser($username, $old_location);
+        if(!$user_info) return "❌ سرویس فعلی در سرور قبلی پیدا نشد!";
+        $expire = $user_info['expire'];
+        $volume = $user_info['data_limit'] - $user_info['data_usage'];
+        removeuser($old_location, $username);
+        $result = adduser($username, $expire, $volume, $new_location);
+        $result = json_decode($result, true);
+        $sub_link = $result['subscription_url'] ?? null;
+    }
+
+    update("invoice", "Service_location", $new_location, "id_invoice", $service_id);
+
+    $msg = "✅ لوکیشن سرویس شما با موفقیت تغییر کرد!\n";
+    $msg .= "لوکیشن جدید: $new_location\n";
+    if($sub_link) $msg .= "لینک جدید:\n$sub_link";
+    else $msg .= "لینک جدید فعلا قابل دریافت نیست، از منوی سرویس دریافت کنید.";
+
+    sendmessage($id_user, $msg, null, 'HTML');
+    return $msg;
+}
 function savedata($type,$namefiled,$valuefiled){
     global $from_id;
     if($type == "clear"){
