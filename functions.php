@@ -396,6 +396,24 @@ function DirectPayment($order_id){
         sendmessage($Payment_report['id_user'], $textpay, null, 'HTML');
     }
 }
+if(preg_match('/^change_location_(\d+)$/', $data, $m)) {
+    $service_id = $m[1];
+    $locations = getActiveLocations();
+    $keyboard = ['inline_keyboard' => []];
+    foreach($locations as $loc) {
+        $keyboard['inline_keyboard'][] = [
+            ['text' => $loc, 'callback_data' => "select_new_location_{$service_id}_" . urlencode($loc)]
+        ];
+    }
+    sendmessage($from_id, "🌏 سرور جدید را انتخاب کنید:", json_encode($keyboard), 'HTML');
+}
+if(preg_match('/^select_new_location_(\d+)_(.+)$/', $data, $m)) {
+    $service_id = $m[1];
+    $new_location = urldecode($m[2]);
+    $result = changeServiceLocation($service_id, $new_location);
+    sendmessage($from_id, $result, null, 'HTML');
+}
+
 function savedata($type,$namefiled,$valuefiled){
     global $from_id;
     if($type == "clear"){
