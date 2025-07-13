@@ -176,18 +176,6 @@ $keyboardhelpadmin = json_encode([
     ],
     'resize_keyboard' => true
 ]);
-
-$keyboard = [
-    'inline_keyboard' => [
-        // ... دکمه‌های دیگه
-        [
-            ['text' => "🌏 تغییر لوکیشن", 'callback_data' => "change_location_{$service_id}"]
-        ],
-        // ... دکمه‌های دیگه
-    ]
-];
-sendmessage($from_id, "📊 اطلاعات سرویس شما:", json_encode($keyboard), 'HTML');
-
 $shopkeyboard = json_encode([
     'keyboard' => [
         [['text' => $textbotlang['Admin']['Product']['addproduct']], ['text' => $textbotlang['Admin']['Product']['titlebtnremove']]],
