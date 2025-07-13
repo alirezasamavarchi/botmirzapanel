@@ -8,6 +8,12 @@ require_once '../functions.php';
 require_once '../text.php';
 $ManagePanel = new ManagePanel();
 
+$stmt = $pdo->prepare("UPDATE marzban_panel mp SET client_count = (
+    SELECT COUNT(*) FROM invoice i 
+    WHERE i.Service_location = mp.name_panel 
+    AND i.status IN ('active', 'end_of_time', 'end_of_volume')
+)");
+$stmt->execute();
 
 $setting = select("setting", "*");
 // buy service 
